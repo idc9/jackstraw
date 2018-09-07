@@ -10,7 +10,7 @@ iain@unc.edu.
 Overview
 ========
 
-This package performs association tests between the observed data and their systematic patterns of variation. This package implements methods from (Chung and Storey, 2015) in python; for an R version see [jackstraw](https://github.com/ncchung/jackstraw).
+This package performs association tests between the observed data and their systematic patterns of variation. This package implements methods from (Chung and Storey, 2015) in python. For an R version (which we followed closely) see https://github.com/ncchung/jackstraw.
 
 *Chung, N.C.* and *Storey, J.D.* (2015) Statistical significance of variables driving systematic variation in high-dimensional data. Bioinformatics, 31(4): 545-554
 http://bioinformatics.oxfordjournals.org/content/31/4/545
@@ -51,13 +51,12 @@ iain@unc.edu.
 Documentation
 ^^^^^^^^^^^^^
 
-The source code is located on github:
-`https://github.com/idc9/jackstraw`_.
+The source code is located on github: https://github.com/idc9/jackstraw.
 
 Testing
 ^^^^^^^
 
-Testing is done using `nose`_.
+Testing is done using `nose`.
 
 Contributing
 ^^^^^^^^^^^^
