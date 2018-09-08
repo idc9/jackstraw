@@ -36,7 +36,6 @@ Example
     jack.fit(X, method='pca', rank=4)
     jack.rejected
 
-.. code::
     array([], dtype=int64)
 
 For some more example code see `these example notebooks`_.
