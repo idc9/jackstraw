@@ -3,6 +3,8 @@ import numpy as np
 from sklearn.externals.joblib import dump, load
 import statsmodels.api as sm
 from math import ceil
+import pandas as pd
+
 from jackstraw.utils import pca, svd_wrapper
 
 
@@ -73,6 +75,8 @@ http://bioinformatics.oxfordjournals.org/content/31/4/545
         self.pvals_adj = None
         self.rejected = None
 
+        self.var_names = None
+
     def save(self, fpath, compress=9):
         dump(self, fpath, compress=compress)
 
@@ -96,6 +100,19 @@ http://bioinformatics.oxfordjournals.org/content/31/4/545
         else:
             raise ValueError('{} is not a valid argument for method'.format(method))
 
+    def compute_pvals(self, F_obs, F_null):
+        self.pvals_raw, self.pvals_adj, self.rejected = \
+            jackstraw_hypothesis_tests(F_obs, F_null,
+                                       method=self.multitest_method,
+                                       alpha=self.alpha)
+
+        self.pvals_raw = pd.Series(self.pvals_raw, index=self.var_names)
+        self.pvals_raw = pd.Series(self.pvals_adj, index=self.var_names)
+        self.rejected = self.var_names[self.rejected]
+
+        self.F_obs = F_obs
+        self.F_null = F_null
+
     def fit(self, X, method, rank, comps='all'):
         """
 
@@ -114,8 +131,16 @@ http://bioinformatics.oxfordjournals.org/content/31/4/545
         comps (None, list of ints): a subset of components of interest.If 'all'
         will include all components.
         """
-        X = np.array(X)
         n, d = X.shape
+
+        if type(X) == pd.DataFrame:
+            self.var_names = np.array(X.columns)
+        else:
+            self.var_names = np.array(range(d))
+
+        # TODO: add functionality for sparse matrices
+        X = np.array(X)
+
         assert rank <= d
 
         if self.S is None:
@@ -128,19 +153,23 @@ http://bioinformatics.oxfordjournals.org/content/31/4/545
         elif type(comps) in [float, int]:
             comps = [int(comps)]
 
+        # the largest component is indexed by rank - 1
+        # the smallest component is index 0
+        assert 0 <= min(comps) and max(comps) < rank
+
         if self.seed:
             np.random.seed(self.seed)
 
         # compute observed F stats for each variable
         scores = self.get_scores(X, method, rank)
-        self.F_obs = np.zeros(d)
+        F_obs = np.zeros(d)
         for j in range(d):
-            self.F_obs[j] = get_F_stat(response=X[:, j],
-                                       explanatory=scores,
-                                       in_H0=comps)
+            F_obs[j] = get_F_stat(response=X[:, j],
+                                  explanatory=scores,
+                                  in_H0=comps)
 
         # compute null F-stats
-        self.F_null = np.zeros((self.S, self.B))
+        F_null = np.zeros((self.S, self.B))
         for b in range(self.B):
             X_perm = X.copy()
 
@@ -154,14 +183,11 @@ http://bioinformatics.oxfordjournals.org/content/31/4/545
 
             # compute F stats
             for s, var in enumerate(vars_to_perm):
-                self.F_null[s, b] = get_F_stat(response=X_perm[:, var],
-                                               explanatory=scores_perm,
-                                               in_H0=comps)
+                F_null[s, b] = get_F_stat(response=X_perm[:, var],
+                                          explanatory=scores_perm,
+                                          in_H0=comps)
 
-        self.pvals_raw, self.pvals_adj, self.rejected = \
-            jackstraw_hypothesis_tests(self.F_obs, self.F_null,
-                                       method=self.multitest_method,
-                                       alpha=self.alpha)
+        self.compute_pvals(F_obs=F_obs, F_null=F_null)
 
 
 def get_F_stat(response, explanatory, in_H0=None):
