@@ -28,6 +28,7 @@ Example
 =======
 
 .. code:: python
+
     import numpy as np
     from jackstraw.jackstraw import Jackstraw
 
@@ -35,6 +36,8 @@ Example
     jack = Jackstraw(S = 10, B = 100)
     jack.fit(X, method='pca', rank=4)
     jack.rejected
+
+.. code::
 
     array([], dtype=int64)
 
